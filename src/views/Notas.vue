@@ -12,7 +12,22 @@
             {{mensaje.texto}}
         </b-alert>
 
-        <form @submit.prevent="agregarNota()">
+        <form @submit.prevent="editarNota(notaEditar )" v-if="editar">
+            <h3>Editar nota</h3>
+            <input type="text" class="form-control my-2" placeholder="Nombre" v-model="notaEditar.nombre">
+            <input type="text" class="form-control my-2" placeholder="Descripcion" v-model="notaEditar.descripcion">
+
+            <div class="row">
+                <div class="col">
+                    <b-button class="btn btn-warning btn-block mt-3 mb-5" type="submit">Guardar</b-button>
+                </div>
+                <div class="col">
+                    <b-button class="btn btn-secundary btn-block mt-3 mb-5" @click="editar=false">Cancelar</b-button>
+                </div>
+            </div>
+        </form>
+
+        <form @submit.prevent="agregarNota()" v-if="!editar">
             <h3>Agregar nueva nota</h3>
             <input type="text" class="form-control my-2" placeholder="Nombre" v-model="nota.nombre">
             <input type="text" class="form-control my-2" placeholder="Descripcion" v-model="nota.descripcion">
@@ -35,7 +50,8 @@
                     <td>{{ item.nombre }}</td>
                     <td>{{ item.descripcion }}</td>
                     <td>
-                        <b-button @click="eliminarNota(item._id)">Eliminar</b-button>
+                        <b-button class="btn btn-danger btn-sm mx-2" @click="eliminarNota(item._id)">Eliminar</b-button>
+                        <b-button class="btn btn-alert btn-sm" @click="activarEdicion(item._id)">Editar</b-button>
                     </td>
                 </tr>
             </tbody>
@@ -55,7 +71,9 @@ export default {
             nota: {
                 nombre: '',
                 descripcion: ''
-            }
+            },
+            editar: false,
+            notaEditar: {}
         }
     },
     created() {
@@ -118,7 +136,31 @@ export default {
         showAlert() {
             this.dismissCountDown = this.dismissSecs
         },
-        
+        activarEdicion(id) {
+            this.editar = true;
+            this.axios.get(`/nota/${id}`)
+               .then(res => {
+                   this.notaEditar = res.data;
+               })
+               .catch(error => {
+                   console.error(error);
+               });
+        },
+        editarNota(notaEditar) {
+            this.axios.put(`/nota/${notaEditar._id}`, notaEditar)
+                .then(res => {
+                    const index = this.notas.findIndex(n => n._id === res.data._id);
+                    this.notas[index].nombre = res.data.nombre;
+                    this.notas[index].descripcion  = res.data.descripcion;
+                    this.mensaje.color = 'success';
+                    this.mensaje.texto = 'Nota editada';
+                    this.showAlert();
+                    this.editar = false;
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }      
     },
     
 }
