@@ -61,6 +61,8 @@
 </template>
 
 <script>
+import {mapState} from 'vuex';
+
 export default {
     data() {
         return {
@@ -76,6 +78,9 @@ export default {
             notaEditar: {}
         }
     },
+    computed: {
+        ...mapState(['token'])
+    },
     created() {
         this.listarNotas()
     },
@@ -85,37 +90,48 @@ export default {
             this.mensaje.texto = 'Probando alerta';
             this.showAlert();
         },
-        listarNotas() {
-            this.axios.get('/nota')
+        listarNotas(){
+            let config = {
+                headers: {
+                token: this.token
+                }
+            }
+
+            this.axios.get('/nota', config)
                 .then(res => {
+                    console.log(res.data);
                     this.notas = res.data;
                 })
-                .catch(error => {
-                    console.error(error);
+                .catch(e => {
+                    console.log(e.response);
                 })
         },
-        agregarNota() {
-            this.axios.post('/nueva-nota', this.nota)
-                .then(res => {
-                    this.notas.push(res.data);
-                    this.nota.nombre = '';
-                    this.nota.descripcion = '';
-                    this.mensaje.color = 'success';
-                    this.mensaje.texto = 'Nota agregada';
-                    this.showAlert();
-                })
-                .catch(error => {
-                    console.error(error);
-
-                    if(error.response.data.error.errors.nombre.message){
-                        this.mensaje.texto = error.response.data.error.errors.nombre.message
-                    }else{
-                        this.mensaje.texto = 'Error de sistema';
-                    }
-
-                    this.mensaje.color = 'danger';
-                    this.showAlert();
-                });
+        agregarNota(){
+            let config = {
+                headers: {
+                token: this.token
+                }
+            }
+            // console.log(this.nota);
+            this.axios.post('/nueva-nota', this.nota, config)
+              .then(res => {
+                this.notas.push(res.data)
+                this.nota.nombre = '';
+                this.nota.descripcion = '';
+                this.mensaje.color = 'success';
+                this.mensaje.texto = 'Nota Agregada!';
+                this.showAlert()
+              })
+              .catch(e => {
+                console.log(e.response);
+                if(e.response.data.error.errors.nombre.message){
+                    this.mensaje.texto = e.response.data.error.errors.nombre.message
+                }else{
+                    this.mensaje.texto = 'Error de sistema';
+                }
+                this.mensaje.color = 'danger';
+                this.showAlert()
+              })
         },
         eliminarNota(id) {
             this.axios.delete(`/nota/${id}`)
@@ -160,7 +176,8 @@ export default {
                 .catch(error => {
                     console.error(error);
                 });
-        }      
+        },
+        
     },
     
 }
