@@ -35,6 +35,7 @@ export default {
                     console.log(res);
                     const token = res.data.token;
                     this.guardarUsuario(token);
+                    this.$router.push({name: 'Notas'});
                 })
                 .catch(error => {
                     this.mensaje = error.response.data.mensaje;

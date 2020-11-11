@@ -1,6 +1,6 @@
 <template>
     <div class="container">
-        <h1>Notas</h1>
+        <h1 class="mt-4">Notas</h1>
 
         <b-alert
             :show="dismissCountDown"
@@ -57,6 +57,23 @@
             </tbody>
         </table>
 
+        <nav aria-label="Page navigation example">
+            <ul class="pagination">
+                <li class="page-item" :class="{'disabled': paginaActual === 1}">
+                <router-link class="page-link" :to="{ query: { pagina: paginaActual - 1 }}">Anterior</router-link>
+                </li>
+                <li class="page-item" :class="{'active':paginaActual === index + 1}"
+                v-for="(item, index) in cantidadPaginas" :key="index">
+                <router-link :to="{ query: { pagina: index + 1 }}" class="page-link">{{index + 1}}</router-link>
+                </li>
+                <li class="page-item" :class="{'disabled': paginaActual === cantidadPaginas}">
+                <router-link class="page-link" :to="{ query: { pagina: paginaActual + 1 }}">Siguiente</router-link>
+                </li>
+            </ul>
+        </nav>
+
+<p>Total notas: {{totalNotas}} - Cantidad de páginas: {{cantidadPaginas}}</p>
+
     </div>
 </template>
 
@@ -66,6 +83,9 @@ import {mapState} from 'vuex';
 export default {
     data() {
         return {
+            totalNotas: 0,
+            limite: 5,
+            paginaActual: 1,
             notas: [],
             dismissSecs: 5,
             dismissCountDown: 0,
@@ -78,34 +98,64 @@ export default {
             notaEditar: {}
         }
     },
+    watch: {
+        "$route.query.pagina": {
+            immediate: true,
+            handler(pagina) {
+                pagina = parseInt(pagina) || 1;
+                this.paginacion(pagina);
+                this.paginaActual = pagina;
+            }
+        }
+    },
     computed: {
-        ...mapState(['token'])
+        ...mapState(['token']),
+        cantidadPaginas() {
+            return Math.ceil(this.totalNotas / this.limite);
+        }
     },
-    created() {
-        this.listarNotas()
-    },
+    // created() {
+    //     this.listarNotas()
+    // },
     methods: {
+        paginacion(pagina) {
+            let config = {
+                headers: {
+                token: this.token
+                }
+            };
+            let skip = (pagina - 1) * this.limite;
+            this.axios
+                .get(`/nota?skip=${skip}&limit=${this.limite}`, config)
+                .then(res => {
+                    console.log(res.data.notaDB);
+                    this.notas = res.data.notaDB;
+                    this.totalNotas = res.data.cantidad;
+                })
+                .catch(e => {
+                  console.log(e.response);
+                });
+        },
         alerta() {
             this.mensaje.color = 'bg-success';
             this.mensaje.texto = 'Probando alerta';
             this.showAlert();
         },
-        listarNotas(){
-            let config = {
-                headers: {
-                token: this.token
-                }
-            }
+        // listarNotas(){
+        //     let config = {
+        //         headers: {
+        //            token: this.token
+        //         }
+        //     }
 
-            this.axios.get('/nota', config)
-                .then(res => {
-                    console.log(res.data);
-                    this.notas = res.data;
-                })
-                .catch(e => {
-                    console.log(e.response);
-                })
-        },
+        //     this.axios.get('/nota', config)
+        //         .then(res => {
+        //             this.notas = res.data.notaDB;
+        //         })
+        //         .catch(e => {
+        //             console.log(e.response);
+        //         })
+        // },
         agregarNota(){
             let config = {
                 headers: {
